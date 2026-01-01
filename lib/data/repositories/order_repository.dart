@@ -168,9 +168,12 @@ class OrderRepository {
         .watch();
   }
 
-  Future<void> updateOrderStatus(int id, String status) {
+  Future<void> updateOrderStatus(int id, String status) async {
+    // Sync upstream
+    syncService.updateOrderStatus(id, status);
+
     final companion = OrdersCompanion(status: Value(status));
-    return (db.update(db.orders)..where((t) => t.id.equals(id))).write(
+    await (db.update(db.orders)..where((t) => t.id.equals(id))).write(
       status == 'paid' || status == 'completed'
           ? companion.copyWith(completedAt: Value(DateTime.now()))
           : companion,

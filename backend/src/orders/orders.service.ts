@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, MoreThan } from 'typeorm';
 import { Order } from './order.entity';
 import { EventsGateway } from '../events/events.gateway';
 
@@ -39,6 +39,30 @@ export class OrdersService {
       where: {
         createdAt: Between(startDate, endDate),
       },
+      relations: ['items', 'items.menuItem'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // Get orders for sync (Active + Recent History)
+  async getSyncOrders(): Promise<Order[]> {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    return this.ordersRepository.find({
+      where: [
+        // Active orders (not completed or cancelled)
+        { status: 'pending' },
+        { status: 'sent' },
+        { status: 'accepted' },
+        { status: 'cooking' },
+        { status: 'ready' },
+        { status: 'served' },
+        { status: 'paid' }, // 'paid' is still open until table is cleared/completed
+        // Recent history
+        { status: 'completed', createdAt: MoreThan(sevenDaysAgo) },
+        { status: 'cancelled', createdAt: MoreThan(sevenDaysAgo) },
+      ],
       relations: ['items', 'items.menuItem'],
       order: { createdAt: 'DESC' },
     });

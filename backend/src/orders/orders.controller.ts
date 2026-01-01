@@ -7,6 +7,11 @@ import { CreateOrderDto } from './dto/create-order.dto';
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 
+    @Get('sync')
+    getSyncOrders(): Promise<Order[]> {
+        return this.ordersService.getSyncOrders();
+    }
+
     @Get()
     findAll(): Promise<Order[]> {
         return this.ordersService.findAll();

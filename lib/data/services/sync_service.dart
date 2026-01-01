@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pos_system/data/database/database.dart';
@@ -7,17 +8,44 @@ class SyncService {
   final AppDatabase db;
   final Dio dio;
   final String baseUrl; // http://localhost:3000
+  late socket_io.Socket socket;
 
   SyncService(this.db, {String? baseUrl})
     : dio = Dio(),
-      baseUrl = baseUrl ?? 'http://localhost:3000';
+      baseUrl = baseUrl ?? 'http://localhost:3000' {
+    initRealtimeUpdates();
+  }
+
+  void initRealtimeUpdates() {
+    socket = socket_io.io(baseUrl, <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': true,
+    });
+
+    socket.onConnect((_) {
+      debugPrint('Connected to WebSocket server');
+    });
+
+    socket.onDisconnect(
+      (_) => debugPrint('Disconnected from WebSocket server'),
+    );
+
+    socket.on('order:new', (data) => upsertOrder(data));
+    socket.on('order:update', (data) => upsertOrder(data));
+    socket.on('table:update', (data) => upsertRestaurantTable(data));
+    socket.on('category:update', (data) => upsertCategory(data));
+    socket.on('menu-item:update', (data) => upsertMenuItem(data));
+    socket.on('user:update', (data) => upsertUser(data));
+  }
 
   Future<void> syncAll() async {
     try {
       await syncTables();
       await syncCategories();
       await syncMenuItems();
+
       await syncOrders();
+      await syncUsers();
       debugPrint('Sync completed successfully');
     } catch (e) {
       debugPrint('Sync failed: $e');
@@ -90,7 +118,7 @@ class SyncService {
   }
 
   Future<void> syncOrders() async {
-    final response = await dio.get('$baseUrl/orders');
+    final response = await dio.get('$baseUrl/orders/sync');
     final List<dynamic> data = response.data;
 
     // For orders, we might need more complex logic, but for now specific upsert
@@ -145,6 +173,14 @@ class SyncService {
       await dio.put('$baseUrl/tables/$id', data: {'status': status});
     } catch (e) {
       debugPrint('Failed to sync table status upstream: $e');
+    }
+  }
+
+  Future<void> updateOrderStatus(int id, String status) async {
+    try {
+      await dio.put('$baseUrl/orders/$id', data: {'status': status});
+    } catch (e) {
+      debugPrint('Failed to sync order status upstream: $e');
     }
   }
 
@@ -239,5 +275,38 @@ class SyncService {
             );
       }
     }
+  }
+
+  Future<void> syncUsers() async {
+    try {
+      final response = await dio.get('$baseUrl/users');
+      final List<dynamic> data = response.data;
+
+      for (var json in data) {
+        await upsertUser(json);
+      }
+    } catch (e) {
+      debugPrint('Failed to sync users: $e');
+    }
+  }
+
+  Future<void> upsertUser(Map<String, dynamic> json) async {
+    await db
+        .into(db.users)
+        .insertOnConflictUpdate(
+          UsersCompanion(
+            id: Value(json['id']),
+            fullName: Value(json['fullName']),
+            username: Value(json['username']),
+            pin: Value(json['pin']),
+            role: Value(json['role']),
+            status: Value(json['status'] ?? 'active'),
+            createdAt: Value(
+              json['createdAt'] != null
+                  ? DateTime.parse(json['createdAt'])
+                  : DateTime.now(),
+            ),
+          ),
+        );
   }
 }

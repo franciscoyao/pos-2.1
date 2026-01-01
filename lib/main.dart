@@ -4,10 +4,14 @@ import 'package:pos_system/data/database/database_provider.dart';
 import 'package:pos_system/data/database/seed_service.dart';
 import 'package:pos_system/features/auth/role_selection_screen.dart';
 import 'package:pos_system/core/theme/app_theme.dart';
-import 'package:pos_system/core/services/websocket_provider.dart';
+
 import 'package:pos_system/data/services/sync_provider.dart';
 
-void main() {
+import 'package:pos_system/core/services/config_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ConfigService.load();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -33,9 +37,6 @@ class _MyAppState extends ConsumerState<MyApp> {
     await seeder.seedIfNeeded();
 
     // Initialize WebSocket connection
-    // Initialize WebSocket connection
-    final webSocketService = ref.read(webSocketServiceProvider);
-    webSocketService.init();
 
     // Initial Sync
     final syncService = ref.read(syncServiceProvider);

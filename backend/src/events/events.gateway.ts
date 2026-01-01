@@ -55,4 +55,8 @@ export class EventsGateway
     emitMenuItemUpdate(menuItem: any) {
         this.server.emit('menu-item:update', menuItem);
     }
+
+    emitUserUpdate(user: any) {
+        this.server.emit('user:update', user);
+    }
 }
