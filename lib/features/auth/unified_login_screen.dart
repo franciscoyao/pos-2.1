@@ -182,18 +182,20 @@ class _UnifiedLoginScreenState extends ConsumerState<UnifiedLoginScreen> {
                           const SizedBox(height: 32),
 
                           // Role Tabs
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: _roles.map((role) {
-                                final isSelected = _selectedRole == role['id'];
-                                return Expanded(
-                                  child: GestureDetector(
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: _roles.map((role) {
+                                  final isSelected =
+                                      _selectedRole == role['id'];
+                                  return GestureDetector(
                                     onTap: () {
                                       setState(() {
                                         _selectedRole = role['id'];
@@ -203,8 +205,13 @@ class _UnifiedLoginScreenState extends ConsumerState<UnifiedLoginScreen> {
                                       duration: const Duration(
                                         milliseconds: 200,
                                       ),
+                                      width: 80,
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 12,
+                                        horizontal: 8,
+                                      ),
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 2,
                                       ),
                                       decoration: BoxDecoration(
                                         color: isSelected
@@ -234,6 +241,7 @@ class _UnifiedLoginScreenState extends ConsumerState<UnifiedLoginScreen> {
                                           const SizedBox(height: 4),
                                           Text(
                                             role['label'],
+                                            textAlign: TextAlign.center,
                                             style: TextStyle(
                                               fontSize: 10,
                                               fontWeight: isSelected
@@ -247,9 +255,9 @@ class _UnifiedLoginScreenState extends ConsumerState<UnifiedLoginScreen> {
                                         ],
                                       ),
                                     ),
-                                  ),
-                                );
-                              }).toList(),
+                                  );
+                                }).toList(),
+                              ),
                             ),
                           ),
 

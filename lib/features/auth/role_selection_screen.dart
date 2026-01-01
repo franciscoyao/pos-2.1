@@ -191,32 +191,37 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                           const SizedBox(height: 32),
 
                           // Role Tabs
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: _roles.map((role) {
-                                final isSelected = _selectedRole == role['id'];
-                                return Expanded(
-                                  child: GestureDetector(
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment
+                                    .center, // Changed to center or start
+                                children: _roles.map((role) {
+                                  final isSelected =
+                                      _selectedRole == role['id'];
+                                  return GestureDetector(
                                     onTap: () {
                                       setState(() {
                                         _selectedRole = role['id'];
-                                        // Optional: Clear fields on roll switch
-                                        // _usernameController.clear();
-                                        // _pinController.clear();
                                       });
                                     },
                                     child: AnimatedContainer(
                                       duration: const Duration(
                                         milliseconds: 200,
                                       ),
+                                      width: 80, // Fixed width or padding-based
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 12,
+                                        horizontal: 8,
+                                      ),
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 2,
                                       ),
                                       decoration: BoxDecoration(
                                         color: isSelected
@@ -246,6 +251,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                                           const SizedBox(height: 4),
                                           Text(
                                             role['label'],
+                                            textAlign: TextAlign.center,
                                             style: TextStyle(
                                               fontSize: 10,
                                               fontWeight: isSelected
@@ -259,9 +265,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                                         ],
                                       ),
                                     ),
-                                  ),
-                                );
-                              }).toList(),
+                                  );
+                                }).toList(),
+                              ),
                             ),
                           ),
 

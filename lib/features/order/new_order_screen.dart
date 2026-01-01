@@ -47,382 +47,449 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
       }
     });
 
-    return Row(
-      children: [
-        // Left Side: Menu Area
-        Expanded(
-          flex: 3,
-          child: Container(
-            color: const Color(0xFFF9FAFB), // Light grey background
-            child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 850;
+
+        if (isMobile) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF9FAFB),
+            body: Column(
               children: [
-                // 1. Top Action Bar (Dine In/Takeaway + Table)
+                // Mobile Top Bar
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(16),
                   color: Colors.white,
-                  child: Row(
+                  child: Column(
                     children: [
-                      // Toggle
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            _buildToggleBtn(
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildToggleBtn(
                               label: 'Dine-In',
                               isSelected: cart.type == 'dine-in',
                               onTap: () => ref
                                   .read(cartProvider.notifier)
                                   .setType('dine-in'),
+                              compact: true,
                             ),
-                            _buildToggleBtn(
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildToggleBtn(
                               label: 'Takeaway',
                               isSelected: cart.type == 'takeaway',
                               onTap: () => ref
                                   .read(cartProvider.notifier)
                                   .setType('takeaway'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      // Table Input
-                      if (cart.type == 'dine-in')
-                        Expanded(
-                          child: Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.grid_view,
-                                  color: Colors.grey,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _tableController,
-                                    style: const TextStyle(
-                                      color: Color(0xFF111827),
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'Table No.',
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey.shade500,
-                                      ),
-                                      border: InputBorder.none,
-                                    ),
-                                    onChanged: (val) => ref
-                                        .read(cartProvider.notifier)
-                                        .setTableNumber(val),
-                                  ),
-                                ),
-                              ],
+                              compact: true,
                             ),
                           ),
-                        ),
-                      if (cart.type == 'takeaway') const Spacer(),
-                      const SizedBox(width: 16),
-                      // QR Button Placeholder
-                      Container(
-                        height: 48,
-                        width: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.qr_code, color: Colors.grey),
+                        ],
                       ),
+                      if (cart.type == 'dine-in') ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.grid_view,
+                                color: Colors.grey,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _tableController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Table No.',
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey.shade500,
+                                    ),
+                                    border: InputBorder.none,
+                                  ),
+                                  onChanged: (val) => ref
+                                      .read(cartProvider.notifier)
+                                      .setTableNumber(val),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
 
-                // 2. Scrollable Content
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Search Bar
-                        TextField(
-                          controller: _searchController,
-                          style: const TextStyle(color: Color(0xFF111827)),
-                          onChanged: (val) => setState(() {}),
-                          decoration: InputDecoration(
-                            hintText: 'Search menu...',
-                            hintStyle: TextStyle(color: Colors.grey.shade500),
-                            prefixIcon: const Icon(Icons.search),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.all(16),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Most Selling
-                        FutureBuilder<List<TopSellingItem>>(
-                          future: ref
-                              .watch(reportRepositoryProvider)
-                              .getTopSellingItems(orderType: cart.type),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-
-                            final topItems = snapshot.data!;
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Most Selling',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF111827),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  height: 180,
-                                  child: ListView.separated(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: topItems.length,
-                                    separatorBuilder: (context, index) =>
-                                        const SizedBox(width: 16),
-                                    itemBuilder: (context, index) {
-                                      final item = topItems[index];
-                                      return _MostSellingCard(
-                                        name: item.name,
-                                        price: item.price,
-                                        imageColor:
-                                            Colors.primaries[index %
-                                                Colors.primaries.length],
-                                        isAvailable: item.status == 'active',
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Categories
-                        StreamBuilder<List<Category>>(
-                          stream: categoriesStream,
-                          builder: (context, snapshot) {
-                            if (snapshot.hasError) {
-                              return Text('Error: ${snapshot.error}');
-                            }
-                            if (!snapshot.hasData) return const SizedBox();
-
-                            final categories = snapshot.data!;
-                            if (categories.isEmpty) return const SizedBox();
-
-                            final filteredCategories = categories.where((c) {
-                              // Match category type with cart type
-                              // (Assuming strict filtering as requested)
-                              return c.menuType == cart.type;
-                            }).toList();
-
-                            if (filteredCategories.isEmpty) {
-                              return const SizedBox();
-                            }
-
-                            return SizedBox(
-                              height: 40,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                children: [
-                                  _CategoryPill(
-                                    label: 'All',
-                                    isSelected: _selectedCategoryId == null,
-                                    onTap: () => setState(
-                                      () => _selectedCategoryId = null,
-                                    ),
-                                  ),
-                                  ...filteredCategories.map(
-                                    (c) => _CategoryPill(
-                                      label: c.name,
-                                      isSelected: _selectedCategoryId == c.id,
-                                      onTap: () => setState(
-                                        () => _selectedCategoryId = c.id,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Menu Grid
-                        _MenuGrid(
-                          selectedCategoryId: _selectedCategoryId,
-                          searchQuery: _searchController.text,
-                        ),
-                      ],
+                    padding: const EdgeInsets.all(16),
+                    child: _buildMenuContent(
+                      cart,
+                      categoriesStream,
+                      isMobile: true,
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
 
-        // Right Side: Cart
-        Container(
-          width: 400,
-          color: Colors.white,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Current Order',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      cart.tableNumber != null && cart.tableNumber!.isNotEmpty
-                          ? 'Table ${cart.tableNumber}'
-                          : 'Select a table',
-                      style: TextStyle(color: Colors.grey.shade500),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-
-              // Cart Items
-              Expanded(
-                child: cart.items.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.shopping_cart_outlined,
-                              size: 64,
-                              color: Colors.grey.shade300,
+                // Mobile Cart Summary Bar
+                if (cart.items.isNotEmpty)
+                  InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => Container(
+                          height: MediaQuery.of(context).size.height * 0.9,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(20),
                             ),
-                            const SizedBox(height: 16),
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                height: 4,
+                                width: 40,
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              Expanded(
+                                child: _CartSidebar(
+                                  cart: cart,
+                                  onSend: () => _sendOrder(context, ref),
+                                  isMobile: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF111827),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${cart.items.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'View Cart',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                             Text(
-                              'Cart is empty',
-                              style: TextStyle(color: Colors.grey.shade400),
+                              '\$${cart.total.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(24),
-                        itemCount: cart.items.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final item = cart.items[index];
-                          return _CartItemRow(item: item);
-                        },
                       ),
-              ),
-
-              // Footer
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      offset: const Offset(0, -4),
-                      blurRadius: 16,
                     ),
-                  ],
-                ),
+                  ),
+              ],
+            ),
+          );
+        }
+
+        return Row(
+          children: [
+            // Left Side: Menu Area
+            Expanded(
+              flex: 3,
+              child: Container(
+                color: const Color(0xFFF9FAFB),
                 child: Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Items:',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                        Text(
-                          '${cart.items.length}',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Subtotal:',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                        Text(
-                          '\$${cart.total.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF111827),
+                    // Top Action Bar
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      color: Colors.white,
+                      child: Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                _buildToggleBtn(
+                                  label: 'Dine-In',
+                                  isSelected: cart.type == 'dine-in',
+                                  onTap: () => ref
+                                      .read(cartProvider.notifier)
+                                      .setType('dine-in'),
+                                ),
+                                _buildToggleBtn(
+                                  label: 'Takeaway',
+                                  isSelected: cart.type == 'takeaway',
+                                  onTap: () => ref
+                                      .read(cartProvider.notifier)
+                                      .setType('takeaway'),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton.icon(
-                        onPressed: cart.items.isEmpty
-                            ? null
-                            : () => _sendOrder(context, ref),
-                        icon: const Icon(Icons.send),
-                        label: const Text('Send Order'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF111827),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          const SizedBox(width: 24),
+                          if (cart.type == 'dine-in')
+                            Expanded(
+                              child: Container(
+                                height: 48,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.grid_view,
+                                      color: Colors.grey,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _tableController,
+                                        style: const TextStyle(
+                                          color: Color(0xFF111827),
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: 'Table No.',
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey.shade500,
+                                          ),
+                                          border: InputBorder.none,
+                                        ),
+                                        onChanged: (val) => ref
+                                            .read(cartProvider.notifier)
+                                            .setTableNumber(val),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          if (cart.type == 'takeaway') const Spacer(),
+                          const SizedBox(width: 16),
+                          Container(
+                            height: 48,
+                            width: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.qr_code,
+                              color: Colors.grey,
+                            ),
                           ),
-                          elevation: 0,
+                        ],
+                      ),
+                    ),
+
+                    // Scrollable Content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: _buildMenuContent(
+                          cart,
+                          categoriesStream,
+                          isMobile: false,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
+
+            // Right Side: Cart
+            SizedBox(
+              width: 400,
+              child: _CartSidebar(
+                cart: cart,
+                onSend: () => _sendOrder(context, ref),
+                isMobile: false,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuContent(
+    CartState cart,
+    Stream<List<Category>> categoriesStream, {
+    required bool isMobile,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Search Bar
+        TextField(
+          controller: _searchController,
+          style: const TextStyle(color: Color(0xFF111827)),
+          onChanged: (val) => setState(() {}),
+          decoration: InputDecoration(
+            hintText: 'Search menu...',
+            hintStyle: TextStyle(color: Colors.grey.shade500),
+            prefixIcon: const Icon(Icons.search),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.all(16),
           ),
+        ),
+        const SizedBox(height: 24),
+
+        // Most Selling
+        FutureBuilder<List<TopSellingItem>>(
+          future: ref
+              .watch(reportRepositoryProvider)
+              .getTopSellingItems(orderType: cart.type),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            final topItems = snapshot.data!;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Most Selling',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 180,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: topItems.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 16),
+                    itemBuilder: (context, index) {
+                      final item = topItems[index];
+                      return _MostSellingCard(
+                        name: item.name,
+                        price: item.price,
+                        imageColor:
+                            Colors.primaries[index % Colors.primaries.length],
+                        isAvailable: item.status == 'active',
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Categories
+        StreamBuilder<List<Category>>(
+          stream: categoriesStream,
+          builder: (context, snapshot) {
+            if (snapshot.hasError || !snapshot.hasData) return const SizedBox();
+            final categories = snapshot.data!;
+            if (categories.isEmpty) return const SizedBox();
+            final filteredCategories = categories.where((c) {
+              return c.menuType == cart.type;
+            }).toList();
+            if (filteredCategories.isEmpty) return const SizedBox();
+
+            return SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _CategoryPill(
+                    label: 'All',
+                    isSelected: _selectedCategoryId == null,
+                    onTap: () => setState(() => _selectedCategoryId = null),
+                  ),
+                  ...filteredCategories.map(
+                    (c) => _CategoryPill(
+                      label: c.name,
+                      isSelected: _selectedCategoryId == c.id,
+                      onTap: () => setState(() => _selectedCategoryId = c.id),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Menu Grid
+        _MenuGrid(
+          selectedCategoryId: _selectedCategoryId,
+          searchQuery: _searchController.text,
+          crossAxisCount: isMobile ? 2 : 3,
         ),
       ],
     );
@@ -432,11 +499,15 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    bool compact = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+        padding: compact
+            ? const EdgeInsets.symmetric(vertical: 12)
+            : const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+        alignment: compact ? Alignment.center : null,
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF111827) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
@@ -523,8 +594,13 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
 class _MenuGrid extends ConsumerWidget {
   final int? selectedCategoryId;
   final String searchQuery;
+  final int crossAxisCount;
 
-  const _MenuGrid({this.selectedCategoryId, required this.searchQuery});
+  const _MenuGrid({
+    this.selectedCategoryId,
+    required this.searchQuery,
+    this.crossAxisCount = 3,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -565,8 +641,8 @@ class _MenuGrid extends ConsumerWidget {
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, // Adjust for screen size ideally
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount, // Adjust for screen size ideally
             childAspectRatio: 0.85, // Adjust card aspect
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
@@ -1072,6 +1148,149 @@ class _QuantityBtn extends StatelessWidget {
         ),
         child: Icon(icon, size: 16, color: const Color(0xFF111827)),
       ),
+    );
+  }
+}
+
+class _CartSidebar extends StatelessWidget {
+  final CartState cart;
+  final VoidCallback onSend;
+  final bool isMobile;
+
+  const _CartSidebar({
+    required this.cart,
+    required this.onSend,
+    required this.isMobile,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Current Order',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                cart.tableNumber != null && cart.tableNumber!.isNotEmpty
+                    ? 'Table ${cart.tableNumber}'
+                    : 'Select a table',
+                style: TextStyle(color: Colors.grey.shade500),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+
+        // Cart Items
+        Expanded(
+          child: cart.items.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shopping_cart_outlined,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Cart is empty',
+                        style: TextStyle(color: Colors.grey.shade400),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: cart.items.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final item = cart.items[index];
+                    return _CartItemRow(item: item);
+                  },
+                ),
+        ),
+
+        // Footer
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: const Offset(0, -4),
+                blurRadius: 16,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Items:', style: TextStyle(color: Colors.grey.shade600)),
+                  Text(
+                    '${cart.items.length}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Subtotal:',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  Text(
+                    '\$${cart.total.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: cart.items.isEmpty ? null : onSend,
+                  icon: const Icon(Icons.send),
+                  label: const Text('Send Order'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF111827),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

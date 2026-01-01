@@ -23,144 +23,211 @@ class _TablesScreenState extends ConsumerState<TablesScreen> {
         .watch(orderRepositoryProvider)
         .watchActiveOrders();
 
-    return Row(
-      children: [
-        // Main Grid
-        Expanded(
-          flex: 3,
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                StreamBuilder(
-                  stream: tablesStream,
-                  builder: (context, tablesSnapshot) {
-                    if (tablesSnapshot.hasError) {
-                      return Text('Error: ${tablesSnapshot.error}');
-                    }
-                    if (!tablesSnapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 850;
 
-                    final tables = tablesSnapshot.data!;
+        return Row(
+          children: [
+            // Main Grid
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    StreamBuilder(
+                      stream: tablesStream,
+                      builder: (context, tablesSnapshot) {
+                        if (tablesSnapshot.hasError) {
+                          return Text('Error: ${tablesSnapshot.error}');
+                        }
+                        if (!tablesSnapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-                    // We also need active orders to show status/totals
-                    return StreamBuilder(
-                      stream: activeOrdersStream,
-                      builder: (context, ordersSnapshot) {
-                        final orders = ordersSnapshot.data ?? [];
+                        final tables = tablesSnapshot.data!;
 
-                        return Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Tables',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${tables.length} tables • ${orders.map((o) => o.tableNumber).toSet().length} active',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              Expanded(
-                                child: GridView.builder(
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
-                                        childAspectRatio: 1.2,
-                                        crossAxisSpacing: 16,
-                                        mainAxisSpacing: 16,
-                                      ),
-                                  itemCount:
-                                      tables.length +
-                                      1, // +1 for Add ScrollView
-                                  itemBuilder: (context, index) {
-                                    if (index == 0) {
-                                      return _AddTableCard(
-                                        onTap: () =>
-                                            _showAddTableDialog(context),
-                                      );
-                                    }
-                                    final table = tables[index - 1];
-                                    // Calculate totals
-                                    final tableOrders = orders
-                                        .where(
-                                          (o) => o.tableNumber == table.name,
-                                        )
-                                        .toList();
-                                    final total = tableOrders.fold(
-                                      0.0,
-                                      (sum, o) => sum + o.totalAmount,
-                                    );
-                                    final isActive = tableOrders.isNotEmpty;
+                        // We also need active orders to show status/totals
+                        return StreamBuilder(
+                          stream: activeOrdersStream,
+                          builder: (context, ordersSnapshot) {
+                            final orders = ordersSnapshot.data ?? [];
 
-                                    // Get first order time for duration calculation
-                                    DateTime? firstOrderTime;
-                                    if (tableOrders.isNotEmpty) {
-                                      tableOrders.sort(
-                                        (a, b) =>
-                                            a.createdAt.compareTo(b.createdAt),
-                                      );
-                                      firstOrderTime =
-                                          tableOrders.first.createdAt;
-                                    }
+                            return Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Tables',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${tables.length} tables • ${orders.map((o) => o.tableNumber).toSet().length} active',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Expanded(
+                                    child: GridView.builder(
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: isMobile ? 2 : 3,
+                                            childAspectRatio: 1.2,
+                                            crossAxisSpacing: 16,
+                                            mainAxisSpacing: 16,
+                                          ),
+                                      itemCount:
+                                          tables.length +
+                                          1, // +1 for Add ScrollView
+                                      itemBuilder: (context, index) {
+                                        if (index == 0) {
+                                          return _AddTableCard(
+                                            onTap: () =>
+                                                _showAddTableDialog(context),
+                                          );
+                                        }
+                                        final table = tables[index - 1];
+                                        // Calculate totals
+                                        final tableOrders = orders
+                                            .where(
+                                              (o) =>
+                                                  o.tableNumber == table.name,
+                                            )
+                                            .toList();
+                                        final total = tableOrders.fold(
+                                          0.0,
+                                          (sum, o) => sum + o.totalAmount,
+                                        );
+                                        final isActive = tableOrders.isNotEmpty;
 
-                                    return _TableCard(
-                                      table: table,
-                                      isActive: isActive,
-                                      activeOrdersCount: tableOrders.length,
-                                      totalAmount: total,
-                                      isSelected:
-                                          _selectedTable?.id == table.id,
-                                      firstOrderTime: firstOrderTime,
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedTable = table;
-                                        });
+                                        // Get first order time for duration calculation
+                                        DateTime? firstOrderTime;
+                                        if (tableOrders.isNotEmpty) {
+                                          tableOrders.sort(
+                                            (a, b) => a.createdAt.compareTo(
+                                              b.createdAt,
+                                            ),
+                                          );
+                                          firstOrderTime =
+                                              tableOrders.first.createdAt;
+                                        }
+
+                                        return _TableCard(
+                                          table: table,
+                                          isActive: isActive,
+                                          activeOrdersCount: tableOrders.length,
+                                          totalAmount: total,
+                                          isSelected:
+                                              _selectedTable?.id == table.id,
+                                          firstOrderTime: firstOrderTime,
+                                          onTap: () {
+                                            if (isMobile) {
+                                              // On mobile, show modal or navigate
+                                              showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                backgroundColor:
+                                                    Colors.transparent,
+                                                builder: (context) => Container(
+                                                  height:
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).size.height *
+                                                      0.85,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.background,
+                                                    borderRadius:
+                                                        const BorderRadius.vertical(
+                                                          top: Radius.circular(
+                                                            20,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                  child: Column(
+                                                    children: [
+                                                      Container(
+                                                        height: 4,
+                                                        width: 40,
+                                                        margin:
+                                                            const EdgeInsets.symmetric(
+                                                              vertical: 8,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors
+                                                              .grey
+                                                              .shade300,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                2,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child:
+                                                            TableDetailsSidebar(
+                                                              table: table,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ).then((_) {
+                                                setState(() {
+                                                  _selectedTable = null;
+                                                });
+                                              });
+                                            }
+                                            setState(() {
+                                              _selectedTable = table;
+                                            });
+                                          },
+                                        );
                                       },
-                                    );
-                                  },
-                                ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
 
-        // Right Sidebar
-        Container(
-          width: 400,
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            border: Border(left: BorderSide(color: AppColors.border)),
-          ),
-          child: _selectedTable == null
-              ? Center(
-                  child: Text(
-                    'Select a table',
-                    style: TextStyle(color: AppColors.textTertiary),
-                  ),
-                )
-              : TableDetailsSidebar(table: _selectedTable!),
-        ),
-      ],
+            // Right Sidebar (Desktop only)
+            if (!isMobile)
+              Container(
+                width: 400,
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  border: Border(left: BorderSide(color: AppColors.border)),
+                ),
+                child: _selectedTable == null
+                    ? Center(
+                        child: Text(
+                          'Select a table',
+                          style: TextStyle(color: AppColors.textTertiary),
+                        ),
+                      )
+                    : TableDetailsSidebar(table: _selectedTable!),
+              ),
+          ],
+        );
+      },
     );
   }
 

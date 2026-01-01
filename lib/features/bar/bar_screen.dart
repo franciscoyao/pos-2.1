@@ -103,46 +103,110 @@ class _BarScreenState extends ConsumerState<BarScreen> {
               .where((o) => o.order.status == 'ready')
               .toList();
 
-          return Column(
-            children: [
-              _buildSummaryHeader(
-                newOrders.length,
-                acceptedOrders.length,
-                0, // No cooking/mixing stage
-                readyOrders.length,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildColumn(
-                        'New Orders',
-                        newOrders,
-                        Colors.red.shade50,
-                        'accepted',
-                      ),
-                      const SizedBox(width: 16),
-                      _buildColumn(
-                        'Accepted',
-                        acceptedOrders,
-                        Colors.orange.shade50,
-                        'cooking',
-                      ),
-                      const SizedBox(width: 16),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 800;
 
-                      _buildColumn(
-                        'Ready',
-                        readyOrders,
-                        Colors.green.shade50,
-                        'served',
+              if (isMobile) {
+                return DefaultTabController(
+                  length: 3,
+                  child: Column(
+                    children: [
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: _buildSummaryHeader(
+                          newOrders.length,
+                          acceptedOrders.length,
+                          0,
+                          readyOrders.length,
+                        ),
+                      ),
+                      const TabBar(
+                        isScrollable: true,
+                        labelColor: Colors.black,
+                        unselectedLabelColor: Colors.grey,
+                        tabs: [
+                          Tab(text: 'New Orders'),
+                          Tab(text: 'Accepted'),
+                          Tab(text: 'Ready'),
+                        ],
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _buildColumn(
+                              'New Orders',
+                              newOrders,
+                              Colors.red.shade50,
+                              'accepted',
+                            ),
+                            _buildColumn(
+                              'Accepted',
+                              acceptedOrders,
+                              Colors.orange.shade50,
+                              'cooking', // Bar might allow cooking status? or direct to ready? preserving existing logic
+                            ),
+                            _buildColumn(
+                              'Ready',
+                              readyOrders,
+                              Colors.green.shade50,
+                              'served',
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ],
+                );
+              }
+
+              return Column(
+                children: [
+                  _buildSummaryHeader(
+                    newOrders.length,
+                    acceptedOrders.length,
+                    0, // No cooking/mixing stage
+                    readyOrders.length,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildColumn(
+                              'New Orders',
+                              newOrders,
+                              Colors.red.shade50,
+                              'accepted',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildColumn(
+                              'Accepted',
+                              acceptedOrders,
+                              Colors.orange.shade50,
+                              'cooking',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildColumn(
+                              'Ready',
+                              readyOrders,
+                              Colors.green.shade50,
+                              'served',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -155,89 +219,78 @@ class _BarScreenState extends ConsumerState<BarScreen> {
     Color bg,
     String nextStatus,
   ) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: orders.isNotEmpty
+                      ? Colors.grey.shade100
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
+                child: Text(
+                  '${orders.length}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
                     color: orders.isNotEmpty
-                        ? Colors.grey.shade100
-                        : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${orders.length}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: orders.isNotEmpty
-                          ? Colors.black87
-                          : Colors.grey.shade400,
-                    ),
+                        ? Colors.black87
+                        : Colors.grey.shade400,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: orders.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.local_bar_outlined,
-                          size: 48,
-                          color: Colors.grey.shade300,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No orders',
-                          style: TextStyle(color: Colors.grey.shade400),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.separated(
-                    itemCount: orders.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _BarOrderCard(
-                        orderWithDetails: orders[index],
-                        nextStatus: nextStatus,
-                        onStatusChange: (status) {
-                          ref
-                              .read(orderRepositoryProvider)
-                              .updateOrderStatus(
-                                orders[index].order.id,
-                                status,
-                              );
-                        },
-                      );
-                    },
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: orders.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.local_bar_outlined,
+                        size: 48,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No orders',
+                        style: TextStyle(color: Colors.grey.shade400),
+                      ),
+                    ],
                   ),
-          ),
-        ],
-      ),
+                )
+              : ListView.separated(
+                  itemCount: orders.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    return _BarOrderCard(
+                      orderWithDetails: orders[index],
+                      nextStatus: nextStatus,
+                      onStatusChange: (status) {
+                        ref
+                            .read(orderRepositoryProvider)
+                            .updateOrderStatus(orders[index].order.id, status);
+                      },
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 

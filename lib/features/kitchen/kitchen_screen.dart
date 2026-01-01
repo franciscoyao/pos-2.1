@@ -96,8 +96,6 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
                 .toList();
           }
 
-          // Filter by status for columns
-          // Assuming 'pending'/'sent' -> New, 'accepted' -> Accepted, 'cooking' -> Cooking, 'ready' -> Ready
           final newOrders = orders
               .where(
                 (o) => o.order.status == 'pending' || o.order.status == 'sent',
@@ -113,52 +111,127 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
               .where((o) => o.order.status == 'ready')
               .toList();
 
-          return Column(
-            children: [
-              _buildSummaryHeader(
-                newOrders.length,
-                acceptedOrders.length,
-                cookingOrders.length,
-                readyOrders.length,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 800;
+
+              if (isMobile) {
+                return DefaultTabController(
+                  length: 4,
+                  child: Column(
                     children: [
-                      _buildColumn(
-                        'New Orders',
-                        newOrders,
-                        Colors.red.shade50,
-                        'accepted',
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: _buildSummaryHeader(
+                          newOrders.length,
+                          acceptedOrders.length,
+                          cookingOrders.length,
+                          readyOrders.length,
+                        ),
                       ),
-                      const SizedBox(width: 16),
-                      _buildColumn(
-                        'Accepted',
-                        acceptedOrders,
-                        Colors.orange.shade50,
-                        'cooking',
+                      const TabBar(
+                        isScrollable: true,
+                        labelColor:
+                            Colors.black, // Explicit color for visibility
+                        unselectedLabelColor: Colors.grey,
+                        tabs: [
+                          Tab(text: 'New Orders'),
+                          Tab(text: 'Accepted'),
+                          Tab(text: 'Cooking'),
+                          Tab(text: 'Ready'),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      _buildColumn(
-                        'Cooking',
-                        cookingOrders,
-                        Colors.blue.shade50,
-                        'ready',
-                      ),
-                      const SizedBox(width: 16),
-                      _buildColumn(
-                        'Ready',
-                        readyOrders,
-                        Colors.green.shade50,
-                        'served',
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _buildColumn(
+                              'New Orders',
+                              newOrders,
+                              Colors.red.shade50,
+                              'accepted',
+                            ),
+                            _buildColumn(
+                              'Accepted',
+                              acceptedOrders,
+                              Colors.orange.shade50,
+                              'cooking',
+                            ),
+                            _buildColumn(
+                              'Cooking',
+                              cookingOrders,
+                              Colors.blue.shade50,
+                              'ready',
+                            ),
+                            _buildColumn(
+                              'Ready',
+                              readyOrders,
+                              Colors.green.shade50,
+                              'served',
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ],
+                );
+              }
+
+              return Column(
+                children: [
+                  _buildSummaryHeader(
+                    newOrders.length,
+                    acceptedOrders.length,
+                    cookingOrders.length,
+                    readyOrders.length,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildColumn(
+                              'New Orders',
+                              newOrders,
+                              Colors.red.shade50,
+                              'accepted',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildColumn(
+                              'Accepted',
+                              acceptedOrders,
+                              Colors.orange.shade50,
+                              'cooking',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildColumn(
+                              'Cooking',
+                              cookingOrders,
+                              Colors.blue.shade50,
+                              'ready',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildColumn(
+                              'Ready',
+                              readyOrders,
+                              Colors.green.shade50,
+                              'served',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -171,91 +244,80 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     Color bg,
     String nextStatus,
   ) {
-    return Expanded(
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+    return Column(
+      children: [
+        // Header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: orders.isNotEmpty
+                      ? Colors.grey.shade100
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
+                child: Text(
+                  '${orders.length}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
                     color: orders.isNotEmpty
-                        ? Colors.grey.shade100
-                        : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${orders.length}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: orders.isNotEmpty
-                          ? Colors.black87
-                          : Colors.grey.shade400,
-                    ),
+                        ? Colors.black87
+                        : Colors.grey.shade400,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          // List
-          Expanded(
-            child: orders.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          size: 48,
-                          color: Colors.grey.shade300,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No orders',
-                          style: TextStyle(color: Colors.grey.shade400),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.separated(
-                    itemCount: orders.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _KitchenOrderCard(
-                        orderWithDetails: orders[index],
-                        nextStatus: nextStatus,
-                        onStatusChange: (status) {
-                          ref
-                              .read(orderRepositoryProvider)
-                              .updateOrderStatus(
-                                orders[index].order.id,
-                                status,
-                              );
-                        },
-                      );
-                    },
+        ),
+        const SizedBox(height: 12),
+        // List
+        Expanded(
+          child: orders.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 48,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No orders',
+                        style: TextStyle(color: Colors.grey.shade400),
+                      ),
+                    ],
                   ),
-          ),
-        ],
-      ),
+                )
+              : ListView.separated(
+                  itemCount: orders.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    return _KitchenOrderCard(
+                      orderWithDetails: orders[index],
+                      nextStatus: nextStatus,
+                      onStatusChange: (status) {
+                        ref
+                            .read(orderRepositoryProvider)
+                            .updateOrderStatus(orders[index].order.id, status);
+                      },
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 

@@ -70,6 +70,17 @@ dev_dependencies:
   riverpod_generator: ^3.0.3
   freezed: ^3.2.3
   json_serializable: ^6.11.2
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  windows:
+    generate: true
+    image_path: "assets/icon.png"
+    icon_size: 48 # standard small size, maybe helps?
+  image_path: "assets/icon.png"
+  min_sdk_android: 21
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
