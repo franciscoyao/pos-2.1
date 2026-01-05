@@ -4,6 +4,8 @@ import 'package:pos_system/core/theme/app_colors.dart';
 import 'package:pos_system/data/repositories/auth_repository.dart';
 import 'package:pos_system/features/dashboard/admin_dashboard.dart';
 import 'package:pos_system/features/dashboard/waiter_dashboard.dart';
+import 'package:pos_system/features/dashboard/kitchen_dashboard.dart';
+import 'package:pos_system/features/dashboard/bar_dashboard.dart';
 
 class UnifiedLoginScreen extends ConsumerStatefulWidget {
   const UnifiedLoginScreen({super.key});
@@ -92,6 +94,12 @@ class _UnifiedLoginScreenState extends ConsumerState<UnifiedLoginScreen> {
         break;
       case 'waiter':
         destination = const WaiterDashboard();
+        break;
+      case 'kitchen':
+        destination = const KitchenDashboard();
+        break;
+      case 'bar':
+        destination = const BarDashboard();
         break;
       default:
         destination = Scaffold(

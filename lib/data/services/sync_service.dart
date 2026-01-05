@@ -16,6 +16,9 @@ class SyncService {
     initRealtimeUpdates();
   }
 
+  final List<Map<String, dynamic>> _offlineQueue = [];
+  bool get isOnline => socket.connected;
+
   void initRealtimeUpdates() {
     socket = socket_io.io(baseUrl, <String, dynamic>{
       'transports': ['websocket'],
@@ -24,6 +27,7 @@ class SyncService {
 
     socket.onConnect((_) {
       debugPrint('Connected to WebSocket server');
+      _processOfflineQueue();
     });
 
     socket.onDisconnect(
@@ -38,6 +42,34 @@ class SyncService {
     socket.on('user:update', (data) => upsertUser(data));
   }
 
+  Future<void> _processOfflineQueue() async {
+    if (_offlineQueue.isEmpty) return;
+
+    debugPrint('Processing offline queue: ${_offlineQueue.length} items');
+    final List<Map<String, dynamic>> remaining = [];
+
+    for (var item in _offlineQueue) {
+      try {
+        final type = item['__type'];
+        final data = item['data'];
+
+        if (type == 'create_order') {
+          await dio.post('$baseUrl/orders', data: data);
+        } else if (type == 'update_order_status') {
+          await dio.put('$baseUrl/orders/${item['id']}', data: data);
+        }
+
+        // Add more handlers as needed
+      } catch (e) {
+        debugPrint('Failed to process queue item: $e');
+        remaining.add(item); // Keep it to retry later
+      }
+    }
+
+    _offlineQueue.clear();
+    _offlineQueue.addAll(remaining);
+  }
+
   Future<void> syncAll() async {
     try {
       await syncTables();
@@ -47,97 +79,142 @@ class SyncService {
       await syncOrders();
       await syncUsers();
       debugPrint('Sync completed successfully');
+
+      // Also try processing queue if we just synced successfully
+      _processOfflineQueue();
     } catch (e) {
       debugPrint('Sync failed: $e');
     }
   }
 
   Future<void> syncTables() async {
-    final response = await dio.get('$baseUrl/tables');
-    final List<dynamic> data = response.data;
+    try {
+      final response = await dio.get('$baseUrl/tables');
+      final List<dynamic> data = response.data;
 
-    await db.batch((batch) {
-      batch.insertAllOnConflictUpdate(
-        db.restaurantTables,
-        data.map(
-          (json) => RestaurantTablesCompanion(
-            id: Value(json['id']),
-            name: Value(json['name']),
-            status: Value(json['status']),
-            x: Value(json['x']),
-            y: Value(json['y']),
+      await db.batch((batch) {
+        batch.insertAllOnConflictUpdate(
+          db.restaurantTables,
+          data.map(
+            (json) => RestaurantTablesCompanion(
+              id: Value(json['id']),
+              name: Value(json['name']),
+              status: Value(json['status']),
+              x: Value(json['x']),
+              y: Value(json['y']),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      });
+    } catch (e) {
+      debugPrint('Failed to sync tables: $e');
+    }
   }
 
   Future<void> syncCategories() async {
-    final response = await dio.get('$baseUrl/categories');
-    final List<dynamic> data = response.data;
+    try {
+      final response = await dio.get('$baseUrl/categories');
+      final List<dynamic> data = response.data;
 
-    await db.batch((batch) {
-      batch.insertAllOnConflictUpdate(
-        db.categories,
-        data.map(
-          (json) => CategoriesCompanion(
-            id: Value(json['id']),
-            name: Value(json['name']),
-            menuType: Value(json['menuType']),
-            sortOrder: Value(json['sortOrder']),
-            station: Value(json['station']),
-            status: Value(json['status']),
+      await db.batch((batch) {
+        batch.insertAllOnConflictUpdate(
+          db.categories,
+          data.map(
+            (json) => CategoriesCompanion(
+              id: Value(json['id']),
+              name: Value(json['name']),
+              menuType: Value(json['menuType']),
+              sortOrder: Value(json['sortOrder']),
+              station: Value(json['station']),
+              status: Value(json['status']),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      });
+    } catch (e) {
+      debugPrint('Failed to sync categories: $e');
+    }
   }
 
   Future<void> syncMenuItems() async {
-    final response = await dio.get('$baseUrl/menu-items');
-    final List<dynamic> data = response.data;
+    try {
+      final response = await dio.get('$baseUrl/menu-items');
+      final List<dynamic> data = response.data;
 
-    await db.batch((batch) {
-      batch.insertAllOnConflictUpdate(
-        db.menuItems,
-        data.map(
-          (json) => MenuItemsCompanion(
-            id: Value(json['id']),
-            code: Value(json['code']),
-            name: Value(json['name']),
-            price: Value(json['price'].toDouble()),
-            categoryId: Value(json['categoryId']),
-            station: Value(json['station']),
-            type: Value(json['type']),
-            status: Value(json['status']),
-            allowPriceEdit: Value(json['allowPriceEdit']),
+      await db.batch((batch) {
+        batch.insertAllOnConflictUpdate(
+          db.menuItems,
+          data.map(
+            (json) => MenuItemsCompanion(
+              id: Value(json['id']),
+              code: Value(json['code']),
+              name: Value(json['name']),
+              price: Value(json['price'].toDouble()),
+              categoryId: Value(json['categoryId']),
+              station: Value(json['station']),
+              type: Value(json['type']),
+              status: Value(json['status']),
+              allowPriceEdit: Value(json['allowPriceEdit']),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      });
+    } catch (e) {
+      debugPrint('Failed to sync menu items: $e');
+    }
   }
 
   Future<void> syncOrders() async {
-    final response = await dio.get('$baseUrl/orders/sync');
-    final List<dynamic> data = response.data;
+    try {
+      final response = await dio.get('$baseUrl/orders/sync');
+      final List<dynamic> data = response.data;
 
-    // For orders, we might need more complex logic, but for now specific upsert
-    // Note: This matches the basic structure. Full deep sync might require handling items separately.
-    for (var json in data) {
-      await db
-          .into(db.orders)
-          .insertOnConflictUpdate(
-            OrdersCompanion(
-              id: Value(json['id']),
-              orderNumber: Value(json['orderNumber']),
-              tableNumber: Value(json['tableNumber']),
-              type: Value(json['type']),
-              // waiterId: Value(json['waiterId']), // nullable
-              status: Value(json['status']),
-              totalAmount: Value(json['totalAmount'].toDouble()),
-              // ... map other fields
-            ),
-          );
+      for (var json in data) {
+        await db
+            .into(db.orders)
+            .insertOnConflictUpdate(
+              OrdersCompanion(
+                id: Value(json['id']),
+                orderNumber: Value(json['orderNumber']),
+                tableNumber: Value(json['tableNumber']),
+                type: Value(json['type']),
+                status: Value(json['status']),
+                totalAmount: Value(json['totalAmount'].toDouble()),
+                taxAmount: Value(json['taxAmount']?.toDouble() ?? 0.0),
+                serviceAmount: Value(json['serviceAmount']?.toDouble() ?? 0.0),
+                paymentMethod: Value(json['paymentMethod']),
+                tipAmount: Value(json['tipAmount']?.toDouble() ?? 0.0),
+                taxNumber: Value(json['taxNumber']),
+                completedAt: Value(
+                  json['completedAt'] != null
+                      ? DateTime.parse(json['completedAt'])
+                      : null,
+                ),
+              ),
+            );
+
+        // Also handle items logic if needed (simplified here for brevity as per original)
+        if (json['items'] != null) {
+          // ... (restoring item sync logic if it was there, let's keep it robust)
+          final List<dynamic> items = json['items'];
+          for (var item in items) {
+            await db
+                .into(db.orderItems)
+                .insertOnConflictUpdate(
+                  OrderItemsCompanion(
+                    id: Value(item['id']),
+                    orderId: Value(item['orderId']),
+                    menuItemId: Value(item['menuItemId']),
+                    quantity: Value(item['quantity']),
+                    priceAtTime: Value(item['priceAtTime']?.toDouble() ?? 0.0),
+                    status: Value(item['status'] ?? 'pending'),
+                  ),
+                );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to sync orders: $e');
     }
   }
 
@@ -145,26 +222,28 @@ class SyncService {
     OrdersCompanion order,
     List<OrderItemsCompanion> items,
   ) async {
+    final orderJson = {
+      'orderNumber': order.orderNumber.value,
+      'tableNumber': order.tableNumber.value,
+      'type': order.type.value,
+      'status': order.status.value,
+      'totalAmount': order.totalAmount.value,
+      'items': items
+          .map(
+            (i) => {
+              'menuItemId': i.menuItemId.value,
+              'quantity': i.quantity.value,
+              'priceAtTime': i.priceAtTime.value,
+            },
+          )
+          .toList(),
+    };
+
     try {
-      final orderJson = {
-        'orderNumber': order.orderNumber.value,
-        'tableNumber': order.tableNumber.value,
-        'type': order.type.value,
-        'status': order.status.value,
-        'totalAmount': order.totalAmount.value,
-        'items': items
-            .map(
-              (i) => {
-                'menuItemId': i.menuItemId.value,
-                'quantity': i.quantity.value,
-                'priceAtTime': i.priceAtTime.value,
-              },
-            )
-            .toList(),
-      };
       await dio.post('$baseUrl/orders', data: orderJson);
     } catch (e) {
-      debugPrint('Failed to sync order upstream: $e');
+      debugPrint('Failed to sync order upstream: $e. Adding to offline queue.');
+      _offlineQueue.add({'__type': 'create_order', 'data': orderJson});
     }
   }
 
@@ -180,7 +259,12 @@ class SyncService {
     try {
       await dio.put('$baseUrl/orders/$id', data: {'status': status});
     } catch (e) {
-      debugPrint('Failed to sync order status upstream: $e');
+      debugPrint('Failed to sync order status upstream: $e. Adding to queue.');
+      _offlineQueue.add({
+        '__type': 'update_order_status',
+        'id': id,
+        'data': {'status': status},
+      });
     }
   }
 
