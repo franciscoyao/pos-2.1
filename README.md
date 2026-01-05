@@ -14,79 +14,55 @@ A complete Point of Sale (POS) system designed for busy restaurants, featuring a
 
 *   **Frontend**: Flutter (Windows Executable, Mobile Apps). Uses `Drift` for local SQLite storage.
 *   **Backend**: NestJS (Node.js). Exposes REST APIs and WebSockets (`Socket.IO`).
-*   **Database**: PostgreSQL (Containerized via Docker).
+*   **Database**: PostgreSQL (Cloud-hosted via **Supabase**).
 
 ---
 
-## Deployment Guide
+## Deployment Guide (Cloud)
 
-### 1. Server Setup (The Computer)
+This system is designed to be deployed to the cloud for real-time access from anywhere.
 
-To run the system, one computer must act as the "Server". This computer will host the database and the backend API.
+### 1. Database (Supabase)
 
-**Prerequisites:**
-*   [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for the database).
-*   [Node.js](https://nodejs.org/) (LTS version).
-*   **Static IP**: Assign a static IP to this computer (e.g., `192.168.1.78`) in your router settings to ensure phones can always find it.
+1.  **Create Project**: Go to [Supabase](https://supabase.com/), create a new project, and note down your **Database Password**.
+2.  **Get Credentials**: In Project Settings -> Database, copy the **Host**, **User**, **Port**, and **Database Name**.
+3.  **Setup Tables**: The backend handles table creation automatically. Optionally, you can run the `backend/schema.sql` file in the Supabase SQL Editor as a backup.
 
-**Steps:**
-1.  **Start Database**:
-    Open a terminal in the `backend/` folder and run:
-    ```powershell
-    docker-compose up -d
-    ```
-    *Ensure Docker Desktop is running first.*
+### 2. Backend (Render)
 
-2.  **Start Backend**:
-    In the same `backend/` folder, run:
-    ```powershell
-    npm install
-    npm run start:prod
-    ```
-    The server is now listening at `http://<YOUR_IP>:3000`.
+1.  **Create Web Service**: Go to [Render](https://render.com/), connect your GitHub repo, and create a new **Web Service**.
+2.  **Configuration**:
+    *   **Root Directory**: `backend`
+    *   **Build Command**: `npm install && npm run build`
+    *   **Start Command**: `npm run start:prod`
+    *   **Environment**: `Node`
+3.  **Environment Variables**: Add these key/value pairs in Render:
+    *   `NODE_ENV`: `production`
+    *   `DB_HOST`: [Your Supabase Host]
+    *   `DB_PORT`: `5432`
+    *   `DB_USERNAME`: `postgres`
+    *   `DB_PASSWORD`: [Your Supabase Password]
+    *   `DB_NAME`: `postgres`
+    *   `DB_SSL`: `true`
 
-### 2. Client Setup (Windows POS)
+### 3. Frontend (Flutter App)
 
-The Windows application is the main terminal, usually running on the same computer as the server or another counter.
-
-**Configuration:**
-1.  Navigate to the build folder (or where you put the executable):
-    `build/windows/x64/runner/Release/data/flutter_assets/assets/`
-2.  Open `config.json` in a text editor.
-3.  Set the `baseUrl` to your server's IP:
+**Update Connection URL**:
+1.  Once Render finishes deploying, copy your backend URL (e.g., `https://pos-backend.onrender.com`).
+2.  Open `assets/config.json` in your source code.
+3.  Update the `baseUrl`:
     ```json
     {
-      "baseUrl": "http://192.168.1.78:3000"
+      "baseUrl": "https://pos-backend.onrender.com"
     }
     ```
 
-**Running:**
-*   Double-click `pos_system.exe` in `build/windows/x64/runner/Release/`.
-
-### 3. Client Setup (Mobile Waiter Apps)
-
-**Configuration:**
-1.  Connect your Android phone via USB.
-2.  In the source code, open `assets/config.json`.
-3.  Set the `baseUrl` to your server's IP (e.g., `http://192.168.1.78:3000`).
-    *Note: Do not use `localhost` for phones; they must use the computer's actual Wi-Fi IP.*
-
-**Install:**
-Run the following command to install the release version on the connected phone:
-```powershell
-flutter run --release
-```
-
-## Troubleshooting
-
-*   **"Connection Refused" on Phones**:
-    *   Make sure the phone and computer are on the **same Wi-Fi network**.
-    *   Check **Windows Firewall**. You may need to allow `Node.js` through the firewall on Private/Public networks.
-    *   Ensure you are using the computer's IPv4 address (run `ipconfig` to check), not `localhost`.
-
-*   **Docker Error**:
-    *   If you see "pipe not found", start **Docker Desktop** application and wait for it to initialize.
-
-*   **Data Not Syncing**:
-    *   Check the server logs (`npm run start:dev` is better for debugging).
-    *   Ensure the `baseUrl` in `config.json` is correct and includes port `:3000`.
+**Build & Run**:
+*   **Windows**:
+    ```powershell
+    flutter run -d windows --release
+    ```
+*   **Android** (Connect phone via USB):
+    ```powershell
+    flutter run -d android --release
+    ```
