@@ -15,13 +15,15 @@ import { UsersModule } from './users/users.module';
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
+      url: process.env.DATABASE_URL, // Support connection string (Render/Supabase)
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT || '5432', 10),
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // Only for development
+      synchronize: true, // AUTO-MIGRATION: Set to false in production if using migrations
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined, // SSL for Supabase
     }),
     EventsModule,
     TablesModule,
