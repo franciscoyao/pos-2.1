@@ -40,6 +40,8 @@ class SyncService {
     socket.on('category:update', (data) => upsertCategory(data));
     socket.on('menu-item:update', (data) => upsertMenuItem(data));
     socket.on('user:update', (data) => upsertUser(data));
+    socket.on('printer:update', (data) => upsertPrinter(data));
+    socket.on('setting:update', (data) => upsertSetting(data));
   }
 
   Future<void> _processOfflineQueue() async {
@@ -78,6 +80,8 @@ class SyncService {
 
       await syncOrders();
       await syncUsers();
+      await syncPrinters();
+      await syncSettings();
       debugPrint('Sync completed successfully');
 
       // Also try processing queue if we just synced successfully
@@ -374,6 +378,56 @@ class SyncService {
     }
   }
 
+  Future<void> syncPrinters() async {
+    try {
+      final response = await dio.get('$baseUrl/printers');
+      final List<dynamic> data = response.data;
+
+      await db.batch((batch) {
+        batch.insertAllOnConflictUpdate(
+          db.printers,
+          data.map(
+            (json) => PrintersCompanion(
+              id: Value(json['id']),
+              name: Value(json['name']),
+              macAddress: Value(json['macAddress']),
+              role: Value(json['role']),
+              status: Value(json['status']),
+            ),
+          ),
+        );
+      });
+    } catch (e) {
+      debugPrint('Failed to sync printers: $e');
+    }
+  }
+
+  Future<void> syncSettings() async {
+    try {
+      final response = await dio.get('$baseUrl/settings');
+      final List<dynamic> data = response.data;
+
+      // Assuming one settings row or multiple, usually just one logic but we'll sync all
+      await db.batch((batch) {
+        batch.insertAllOnConflictUpdate(
+          db.settings,
+          data.map(
+            (json) => SettingsCompanion(
+              id: Value(json['id']),
+              taxRate: Value(json['taxRate']?.toDouble() ?? 0.0),
+              serviceRate: Value(json['serviceRate']?.toDouble() ?? 0.0),
+              currencySymbol: Value(json['currencySymbol'] ?? '\$'),
+              kioskMode: Value(json['kioskMode'] ?? false),
+              orderDelayThreshold: Value(json['orderDelayThreshold'] ?? 15),
+            ),
+          ),
+        );
+      });
+    } catch (e) {
+      debugPrint('Failed to sync settings: $e');
+    }
+  }
+
   Future<void> upsertUser(Map<String, dynamic> json) async {
     await db
         .into(db.users)
@@ -390,6 +444,35 @@ class SyncService {
                   ? DateTime.parse(json['createdAt'])
                   : DateTime.now(),
             ),
+          ),
+        );
+  }
+
+  Future<void> upsertPrinter(Map<String, dynamic> json) async {
+    await db
+        .into(db.printers)
+        .insertOnConflictUpdate(
+          PrintersCompanion(
+            id: Value(json['id']),
+            name: Value(json['name']),
+            macAddress: Value(json['macAddress']),
+            role: Value(json['role']),
+            status: Value(json['status']),
+          ),
+        );
+  }
+
+  Future<void> upsertSetting(Map<String, dynamic> json) async {
+    await db
+        .into(db.settings)
+        .insertOnConflictUpdate(
+          SettingsCompanion(
+            id: Value(json['id']),
+            taxRate: Value(json['taxRate']?.toDouble() ?? 0.0),
+            serviceRate: Value(json['serviceRate']?.toDouble() ?? 0.0),
+            currencySymbol: Value(json['currencySymbol'] ?? '\$'),
+            kioskMode: Value(json['kioskMode'] ?? false),
+            orderDelayThreshold: Value(json['orderDelayThreshold'] ?? 15),
           ),
         );
   }

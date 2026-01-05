@@ -7,24 +7,24 @@ export class OrderItem {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({ name: 'order_id' })
     orderId: number;
 
     @ManyToOne(() => Order, (order) => order.items)
-    @JoinColumn({ name: 'orderId' })
+    @JoinColumn({ name: 'order_id' })
     order: Order;
 
-    @Column()
+    @Column({ name: 'menu_item_id' })
     menuItemId: number;
 
     @ManyToOne(() => MenuItem)
-    @JoinColumn({ name: 'menuItemId' })
+    @JoinColumn({ name: 'menu_item_id' })
     menuItem: MenuItem;
 
     @Column({ default: 1 })
     quantity: number;
 
-    @Column('float')
+    @Column('float', { name: 'price_at_time' })
     priceAtTime: number;
 
     @Column({ default: 'pending' })

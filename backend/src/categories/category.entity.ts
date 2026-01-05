@@ -8,10 +8,10 @@ export class Category {
     @Column()
     name: string;
 
-    @Column({ default: 'dine-in' })
+    @Column({ name: 'menu_type', default: 'dine-in' })
     menuType: string;
 
-    @Column({ default: 0 })
+    @Column({ name: 'sort_order', default: 0 })
     sortOrder: number;
 
     @Column({ nullable: true })

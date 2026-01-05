@@ -5,7 +5,7 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ nullable: true })
+    @Column({ name: 'full_name', nullable: true })
     fullName: string;
 
     @Column({ unique: true, nullable: true })
@@ -20,6 +20,6 @@ export class User {
     @Column({ default: 'active' })
     status: string;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 }

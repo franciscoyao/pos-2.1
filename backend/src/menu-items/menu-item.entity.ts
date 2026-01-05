@@ -15,11 +15,11 @@ export class MenuItem {
     @Column('float')
     price: number;
 
-    @Column()
+    @Column({ name: 'category_id' })
     categoryId: number;
 
     @ManyToOne(() => Category)
-    @JoinColumn({ name: 'categoryId' })
+    @JoinColumn({ name: 'category_id' })
     category: Category;
 
     @Column({ default: 'kitchen' })
@@ -31,6 +31,6 @@ export class MenuItem {
     @Column({ default: 'active' })
     status: string;
 
-    @Column({ default: false })
+    @Column({ name: 'allow_price_edit', default: false })
     allowPriceEdit: boolean;
 }

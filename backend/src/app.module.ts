@@ -9,6 +9,8 @@ import { CategoriesModule } from './categories/categories.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
 import { OrdersModule } from './orders/orders.module';
 import { UsersModule } from './users/users.module';
+import { PrintersModule } from './printers/printers.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { UsersModule } from './users/users.module';
     MenuItemsModule,
     OrdersModule,
     UsersModule,
+    PrintersModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

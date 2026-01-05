@@ -6,43 +6,43 @@ export class Order {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ unique: true })
+    @Column({ name: 'order_number', unique: true })
     orderNumber: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'table_number', nullable: true })
     tableNumber: string;
 
     @Column({ default: 'dine-in' })
     type: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'waiter_id', nullable: true })
     waiterId: number;
 
     @Column({ default: 'pending' })
     status: string;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @Column('float', { default: 0.0 })
+    @Column('float', { name: 'total_amount', default: 0.0 })
     totalAmount: number;
 
-    @Column('float', { default: 0.0 })
+    @Column('float', { name: 'tax_amount', default: 0.0 })
     taxAmount: number;
 
-    @Column('float', { default: 0.0 })
+    @Column('float', { name: 'service_amount', default: 0.0 })
     serviceAmount: number;
 
-    @Column({ nullable: true })
+    @Column({ name: 'payment_method', nullable: true })
     paymentMethod: string;
 
-    @Column('float', { default: 0.0 })
+    @Column('float', { name: 'tip_amount', default: 0.0 })
     tipAmount: number;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ name: 'tax_number', type: 'varchar', nullable: true })
     taxNumber: string | null;
 
-    @Column({ type: 'timestamp', nullable: true })
+    @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
     completedAt: Date;
 
     @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true })
