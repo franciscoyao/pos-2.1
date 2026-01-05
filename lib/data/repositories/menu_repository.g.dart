@@ -10,12 +10,12 @@ part of 'menu_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(menuRepository)
-const menuRepositoryProvider = MenuRepositoryProvider._();
+final menuRepositoryProvider = MenuRepositoryProvider._();
 
 final class MenuRepositoryProvider
     extends $FunctionalProvider<MenuRepository, MenuRepository, MenuRepository>
     with $Provider<MenuRepository> {
-  const MenuRepositoryProvider._()
+  MenuRepositoryProvider._()
     : super(
         from: null,
         argument: null,

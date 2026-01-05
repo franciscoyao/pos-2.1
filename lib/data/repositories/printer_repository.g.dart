@@ -10,7 +10,7 @@ part of 'printer_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(printerRepository)
-const printerRepositoryProvider = PrinterRepositoryProvider._();
+final printerRepositoryProvider = PrinterRepositoryProvider._();
 
 final class PrinterRepositoryProvider
     extends
@@ -20,7 +20,7 @@ final class PrinterRepositoryProvider
           PrinterRepository
         >
     with $Provider<PrinterRepository> {
-  const PrinterRepositoryProvider._()
+  PrinterRepositoryProvider._()
     : super(
         from: null,
         argument: null,

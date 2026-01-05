@@ -10,13 +10,13 @@ part of 'table_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(tableRepository)
-const tableRepositoryProvider = TableRepositoryProvider._();
+final tableRepositoryProvider = TableRepositoryProvider._();
 
 final class TableRepositoryProvider
     extends
         $FunctionalProvider<TableRepository, TableRepository, TableRepository>
     with $Provider<TableRepository> {
-  const TableRepositoryProvider._()
+  TableRepositoryProvider._()
     : super(
         from: null,
         argument: null,

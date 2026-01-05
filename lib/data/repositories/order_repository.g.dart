@@ -10,13 +10,13 @@ part of 'order_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(orderRepository)
-const orderRepositoryProvider = OrderRepositoryProvider._();
+final orderRepositoryProvider = OrderRepositoryProvider._();
 
 final class OrderRepositoryProvider
     extends
         $FunctionalProvider<OrderRepository, OrderRepository, OrderRepository>
     with $Provider<OrderRepository> {
-  const OrderRepositoryProvider._()
+  OrderRepositoryProvider._()
     : super(
         from: null,
         argument: null,
